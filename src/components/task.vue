@@ -19,7 +19,7 @@
   </div>
 </template>
 
-<script lang="ts">
+<!--<script lang="ts">
 export default {
   props: ["title", "done", "beingEdited", "save"],
   emits: ["remove", "edit", "save", "check"],
@@ -32,6 +32,22 @@ export default {
   //   }
   // }
 };
+</script> -->
+
+<script setup lang="ts">
+const props = defineProps({
+  title: String,
+  done: Boolean,
+  beingEdited: Boolean
+})
+const emits = defineEmits<{
+  (event: 'remove'): void
+  (event: 'edit'): void
+  (event: 'save', eventArg: Event): void
+  (event: 'check', eventArg: Event): void
+
+}>()
+
 </script>
 
 <style>
