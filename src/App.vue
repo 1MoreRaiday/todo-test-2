@@ -3,192 +3,69 @@
     <task
       v-for="task in tasks"
       :title="task.title"
-      :done="task.done"
-      :_id="task._id"
-      :being-edited="task.beingEdited"
+      :done="task.isDone"
+      :being-edited="currentEdit === task.id"
       @remove="remove(task)"
-      @edit="edit(task)"
-      @check="check(task, $event)"
-      @save="save(task, $event)"
+      @makeEditable="makeEditable(task.id)"
+      @update="update(task, $event)"
     />
   </ul>
-  <form @submit.prevent="add($event)" class="add">
-    <input type="text" />
-    <button type="submit">add</button>
-  </form>
+  <adder @add="add" />
 
-  <!-- <button @click="add">add</button> -->
 </template>
 
 <script setup lang="ts">
 import task from "./components/task.vue";
+import adder from "./components/adder.vue";
 import axios from "axios";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
 interface Task {
   title: string;
-  done: boolean;
-  _id: string;
-  beingEdited: boolean;
+  isDone: boolean;
+  id: number;
+  // beingEdited: boolean;
 }
+
+const api = axios.create({ baseURL: "http://127.0.0.1:8000/items" });
+
 const tasks = ref([] as Array<Task>);
 
-function sync() {
-  axios.get("http://127.0.0.1:8000/items").then((response) => {
-    tasks.value = response.data;
-  });
+const currentEdit = ref(null as number | null);
+
+async function sync() {
+  let resp = await api.get("");
+  console.log(resp.data);
+  tasks.value = resp.data;
 }
 
-function add(event: Event) {
-  if (event.target === null) return;
-  if (event.target[0].value === "") return;
-  axios
-    .post("http://127.0.0.1:8000/items/create", {
-      title: event.target[0].value,
-    })
-    .then((response) => {
-      sync();
-    });
-  event.target.reset();
+async function add(arg: string) {
+  let resp = await api.post("create", { title: arg });
+  tasks.value.push(resp.data);
 }
 
-function edit(task: Task) {
-  tasks.value.forEach((t) => {
-    if (t._id !== task._id) {
-      t.beingEdited = false;
-    }
-  });
-  task.beingEdited = true;
+function makeEditable(id: number) {
+  currentEdit.value = id;
 }
+
 function remove(task: Task) {
-  axios
-    .post("http://127.0.0.1:8000/items/delete", {
-      _id: task._id,
-    })
-    .then((response) => {
-      sync();
-    });
-}
-function check(task: Task, event: Event) {
-  axios
-    .post("http://127.0.0.1:8000/items/update", {
-      _id: task._id,
-      done: (event.target as HTMLInputElement).checked,
-    })
-    .then((response) => {
-      sync();
-    });
-}
-function save(task: Task, event: Event) {
-  axios
-    .post("http://127.0.0.1:8000/items/update", {
-      _id: task._id,
-      title: event.target[0].value,
-    })
-    .then((response) => {
-      sync();
-    });
+  api.post("delete", { id: task.id });
+  tasks.value = tasks.value.filter((t) => t.id !== task.id);
 }
 
-sync();
-</script>
+async function update(task: Task, event: string | boolean) {
+  let payload = { id: task.id, title: task.title, isDone: task.isDone };
+  typeof event === "string" ? (payload.title = event) : (payload.isDone = event);
+  let resp = await api.post("update", payload);
+  currentEdit.value = null;
 
-//
-<script lang="ts">
-// import task from "./components/task.vue";
-// import axios from "axios";
+  task.title = resp.data.title;
+  task.isDone = resp.data.isDone;
+}
 
-// export default {
-//   components: { task },
-//   data() {
-//     return {
-//       tasks: [] as Array<{
-//         title: string;
-//         done: boolean;
-//         _id: string;
-//         beingEdited: boolean;
-//       }>,
-//     };
-//   },
-//   beforeMount() {
-//     this.sync();
-//   },
-//   methods: {
-//     add(event: SubmitEvent) {
-//       if (event.target[0].value === "") return;
-//       axios
-//         .post("http://127.0.0.1:8000/items/create", {
-//           title: event.target[0].value,
-//         })
-//         .then((response) => {
-//           this.tasks.push(response.data);
-//         })
-//         .catch((error) => {
-//           console.log(error);
-//         });
-//       event.target.reset();
-//     },
-
-//     edit(task: { title: string; done: boolean; _id: string; beingEdited: boolean }) {
-//       this.tasks.forEach((t) => {
-//         if (t._id !== task._id) {
-//           t.beingEdited = false;
-//         }
-//       });
-//       task.beingEdited = true;
-//     },
-//     remove(task: { title: string; done: boolean; _id: string; beingEdited: boolean }) {
-//       axios
-//         .post("http://127.0.0.1:8000/items/delete", {
-//           _id: task._id,
-//         })
-//         .then((response) => {
-//           this.sync();
-//         })
-//         .catch((error) => {
-//           console.log(error);
-//         });
-//       this.sync();
-//     },
-//     check(
-//       task: { title: string; done: boolean; _id: string; beingEdited: boolean },
-//       event: Event
-//     ) {
-//       axios
-//         .post("http://127.0.0.1:8000/items/update", {
-//           _id: task._id,
-//           done: (event.target as HTMLInputElement).checked,
-//         })
-//         .then((response) => {
-//           this.sync();
-//         });
-//     },
-//     save(
-//       task: { title: string; done: boolean; _id: string; beingEdited: boolean },
-//       event: SubmitEvent
-//     ) {
-//       axios
-//         .post("http://127.0.0.1:8000/items/update", {
-//           _id: task._id,
-//           title: event.target[0].value,
-//         })
-//         .then((response) => {
-//           this.sync();
-//         });
-//     },
-//     sync() {
-//       axios
-//         .get("http://127.0.0.1:8000/items")
-//         .then((response) => {
-//           this.tasks = response.data;
-//         })
-//         .catch((error) => {
-//           console.log(error);
-//         });
-//     },
-//   },
-// };
-//
+onMounted(() => {
+  sync();
+});
 </script>
 
 <style></style>
