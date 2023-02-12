@@ -7,12 +7,12 @@
       @change="$emit('check', $event)"
     />
 
-    <div class="title" v-if="!beingEdited">{{ title }}</div>
-    <button @click="$emit('edit')" v-if="!beingEdited">edit</button>
+    <div class="title" v-if="!beingEdited" @click="$emit('edit')">{{ title }}</div>
+    <!-- <button @click="$emit('edit')" v-if="!beingEdited">edit</button> -->
 
     <form @submit.prevent="$emit('save', $event)" class="add" v-if="beingEdited">
       <input class="title" :value="title" type="text" />
-      <button type="submit">save</button>
+      <button type="submit" class="save">S</button>
     </form>
 
     <button @click="$emit('remove')" class="remove">X</button>

@@ -12,7 +12,7 @@
       @save="save(task, $event)"
     />
   </ul>
-  <form @submit.prevent="add" class="add">
+  <form @submit.prevent="add($event)" class="add">
     <input type="text" />
     <button type="submit">add</button>
   </form>
@@ -39,7 +39,7 @@ function sync() {
   });
 }
 
-function add(event: SubmitEvent) {
+function add(event: Event) {
   if (event.target === null) return;
   if (event.target[0].value === "") return;
   axios
@@ -79,7 +79,7 @@ function check(task: Task, event: Event) {
       sync();
     });
 }
-function save(task: Task, event: SubmitEvent) {
+function save(task: Task, event: Event) {
   axios
     .post("http://127.0.0.1:8000/items/update", {
       _id: task._id,
